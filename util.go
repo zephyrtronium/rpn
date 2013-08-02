@@ -31,7 +31,9 @@ import (
 // Parse a literal into either a *big.Int or *big.Rat. s may be an integer
 // literal with case-insensitive prefix 0x for hexadecimal, 0 for octal, 0b
 // for binary, and decimal otherwise; or it may be a fraction of two decimal
-// integers separated by a /; or it may be a floating-point constant.
+// integers separated by a /; or it may be a floating-point constant. The
+// returned interface{} is the value of appropriate type, and the bool
+// indicates success.
 func ParseConst(s string) (interface{}, bool) {
 	if strings.IndexAny(s, "./") != -1 || strings.IndexAny(s, "eE") != -1 && !(len(s) > 2 && strings.EqualFold(s[:2], "0x")) {
 		return new(big.Rat).SetString(s)

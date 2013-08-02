@@ -451,7 +451,10 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 				_ = y.(*big.Rat)
 				return nil, TypeError{"int"}
 			}
-			stack[len(stack)-1] = new(big.Rat).SetFrac(a, b)
+			if a.Sign() == 0 {
+				return nil, DivByZero{}
+			}
+			stack[len(stack)-1] = new(big.Rat).SetFrac(b, a)
 		case oDENOM:
 			x := top(stack)
 			if a, ok := x.(*big.Rat); ok {
@@ -460,11 +463,21 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 				return nil, TypeError{"rat"}
 			}
 		case oINV:
-			x := top(stack)
-			if a, ok := x.(*big.Rat); ok {
-				a.Inv(a)
-			} else {
-				return nil, TypeError{"rat"}
+			// Because x 1 oQUO may be optimized to x INV, we need to handle
+			// both int and rat.
+			switch i := top(stack).(type) {
+			case *big.Int:
+				if i.Sign() == 0 {
+					return nil, DivByZero{}
+				}
+				i.Quo(big.NewInt(1), i)
+			case *big.Rat:
+				if i.Sign() == 0 {
+					return nil, DivByZero{}
+				}
+				i.Inv(i)
+			default:
+				panic("inv: wrong type on stack!")
 			}
 		case oNUM:
 			x := top(stack)
