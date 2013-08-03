@@ -58,7 +58,7 @@ func goast(node ast.Node, e *Expr) error {
 		if nn.Kind == token.INT || nn.Kind == token.FLOAT {
 			if x, ok := new(big.Rat).SetString(nn.Value); ok {
 				e.ops = append(e.ops, oCONST)
-				e.consts = append(e.consts, *x)
+				e.consts = append(e.consts, x)
 			} else {
 				panic("can this even happen?")
 			}
@@ -106,7 +106,8 @@ func goast(node ast.Node, e *Expr) error {
 		}
 		op := oNOP
 		switch nn.Op {
-		case token.ADD: // do nothing
+		case token.ADD:
+			break
 		case token.SUB:
 			op = oNEG
 		case token.XOR:
@@ -120,9 +121,100 @@ func goast(node ast.Node, e *Expr) error {
 			return err
 		}
 	case *ast.CallExpr:
-		panic("not implemented yet")
+		if ident, ok := nn.Fun.(*ast.Ident); ok {
+			op := oNOP
+			m, n := -1, -1
+			switch ident.Name {
+			case "abs":
+				op = oABS
+				n = 1
+			case "binomial":
+				op = oBINOMIAL
+				n = 2
+			case "div":
+				op = oDIV
+				n = 2
+			case "exp":
+				op = oEXP
+				m, n = 2, 3
+			case "gcd":
+				op = oGCD
+				n = 2
+			case "mod":
+				op = oMOD
+				n = 2
+			case "modinv":
+				op = oMODINVERSE
+				n = 2
+			case "mulrange":
+				op = oMULRANGE
+				n = 2
+			case "rand":
+				panic("not implemented yet")
+			case "frac":
+				op = oFRAC
+				n = 2
+			case "denom":
+				op = oDENOM
+				n = 1
+			case "inv":
+				op = oINV
+				n = 1
+			case "num":
+				op = oNUM
+				n = 1
+			default:
+				return BadToken{}
+			}
+			if n >= 0 {
+				if m < 0 {
+					if err := chkargs(nn, n, e); err != nil {
+						return err
+					}
+					e.ops = append(e.ops, op)
+				} else {
+					if err := chkargs2(nn, m, n, e); err != nil {
+						return err
+					}
+					e.ops = append(e.ops, op)
+				}
+			}
+		} else {
+			return BadToken{}
+		}
 	default:
 		return BadToken{}
+	}
+	return nil
+}
+
+func chkargs(nn *ast.CallExpr, n int, e *Expr) error {
+	if len(nn.Args) != n {
+		return BadCall{n}
+	}
+	for i := 0; i < n; i++ {
+		if err := goast(nn.Args[i], e); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func chkargs2(nn *ast.CallExpr, m, n int, e *Expr) error {
+	if len(nn.Args) < m || len(nn.Args) > n {
+		return BadCall{m}
+	}
+	for i := 0; i < n; i++ {
+		if i >= len(nn.Args) {
+			for i < n {
+				e.ops = append(e.ops, oCONST)
+				e.consts = append(e.consts, nil)
+				i++
+			}
+			break
+		} else if err := goast(nn.Args[i], e); err != nil {
+			return err
+		}
 	}
 	return nil
 }

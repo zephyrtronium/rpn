@@ -23,6 +23,8 @@ freely, subject to the following restrictions:
 
 package rpn
 
+import "fmt"
+
 type (
 	// A variable in the expression is not in those used for evaluation.
 	MissingVar struct {
@@ -42,6 +44,11 @@ type (
 	// Division or modulus by zero.
 	DivByZero struct{}
 
+	// A function has been called with incorrect number of arguments.
+	BadCall struct {
+		Num int
+	}
+
 	// An unknown token was parsed by the Go parser.
 	BadToken struct{}
 )
@@ -50,4 +57,5 @@ func (m MissingVar) Error() string  { return "missing var " + m.Name }
 func (t TypeError) Error() string   { return "incorrect type; needed " + t.Needed }
 func (OverflowError) Error() string { return "overflow" }
 func (DivByZero) Error() string     { return "division by zero" }
+func (b BadCall) Error() string     { return fmt.Sprintf("bad call; needed %d args", b.Num) }
 func (BadToken) Error() string      { return "unrecognized token" }

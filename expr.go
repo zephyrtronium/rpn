@@ -29,7 +29,7 @@ import "math/big"
 type Expr struct {
 	ops    []operator
 	names  []string
-	consts []big.Rat
+	consts []*big.Rat
 }
 
 // Evaluate an expression with variables given in vars.
@@ -40,23 +40,21 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 		switch op {
 		case oNOP: // do nothing
 		case oLOAD:
-			if names[0] == "" {
-				stack = append(stack, nil)
-			} else {
-				v := vars[names[0]]
-				switch i := v.(type) {
-				case *big.Int:
-					stack = append(stack, new(big.Int).Set(i))
-				case *big.Rat:
-					stack = append(stack, new(big.Rat).Set(i))
-				default:
-					return nil, MissingVar{names[0]}
-				}
+			v := vars[names[0]]
+			switch i := v.(type) {
+			case *big.Int:
+				stack = append(stack, new(big.Int).Set(i))
+			case *big.Rat:
+				stack = append(stack, new(big.Rat).Set(i))
+			default:
+				return nil, MissingVar{names[0]}
 			}
 			names = names[1:]
 		case oCONST:
-			v := &consts[0]
-			if v.IsInt() {
+			v := consts[0]
+			if v == nil {
+				stack = append(stack, nil)
+			} else if v.IsInt() {
 				stack = append(stack, new(big.Int).Set(v.Num()))
 			} else {
 				stack = append(stack, new(big.Rat).Set(v))
