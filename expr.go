@@ -455,10 +455,13 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 			stack[len(stack)-1] = new(big.Rat).SetFrac(b, a)
 		case oDENOM:
 			x := top(stack)
-			if a, ok := x.(*big.Rat); ok {
+			switch a := x.(type) {
+			case *big.Rat:
 				stack[len(stack)-1] = a.Denom()
-			} else {
-				return nil, TypeError{"rat"}
+			case *big.Int:
+				a.SetUint64(1)
+			default:
+				panic("denom: wrong type on stack!")
 			}
 		case oINV:
 			// Because x 1 oQUO may be optimized to x INV, we need to handle
@@ -479,10 +482,13 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 			}
 		case oNUM:
 			x := top(stack)
-			if a, ok := x.(*big.Rat); ok {
+			switch a := x.(type) {
+			case *big.Rat:
 				stack[len(stack)-1] = a.Num()
-			} else {
-				return nil, TypeError{"rat"}
+			case *big.Int:
+				// do nothing
+			default:
+				panic("num: wrong type on stack!")
 			}
 		default:
 			panic("unknown op!")
