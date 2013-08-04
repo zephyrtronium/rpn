@@ -50,5 +50,6 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+	fmt.Println(expr)
 	fmt.Println(res.RatString())
 }

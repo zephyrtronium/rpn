@@ -23,7 +23,11 @@ freely, subject to the following restrictions:
 
 package rpn
 
-import "math/big"
+import (
+	"bytes"
+	"fmt"
+	"math/big"
+)
 
 // A compiled expression.
 type Expr struct {
@@ -253,7 +257,7 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 				_ = y.(*big.Rat)
 				return nil, TypeError{"int"}
 			}
-			if toobig(a) || toobig(b) {
+			if toobig64(a) || toobig64(b) {
 				return nil, OverflowError{}
 			}
 			b.Binomial(b.Int64(), a.Int64())
@@ -363,7 +367,7 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 				_ = y.(*big.Rat)
 				return nil, TypeError{"int"}
 			}
-			if toobig(a) || toobig(b) {
+			if toobig64(a) || toobig64(b) {
 				return nil, OverflowError{}
 			}
 			b.MulRange(b.Int64(), a.Int64())
@@ -505,7 +509,7 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 }
 
 // Compute a list of names of variable names in the expression.
-func (e Expr) Vars() []string {
+func (e *Expr) Vars() []string {
 	m := make(map[string]struct{})
 	for _, k := range e.names {
 		m[k] = struct{}{}
@@ -517,7 +521,88 @@ func (e Expr) Vars() []string {
 	return s
 }
 
-// TODO: Expr.String()
+// Show the compiled RPN expression.
+func (e *Expr) String() string {
+	names, consts := e.names, e.consts
+	var buf bytes.Buffer
+	first := true
+	for _, op := range e.ops {
+		var s string
+		switch op {
+		case oNOP:
+			s = "NOP"
+		case oLOAD:
+			s, names = fmt.Sprintf("(%s)", names[0]), names[1:]
+		case oCONST:
+			if c := consts[0]; c == nil {
+				s = "<nil>"
+			} else {
+				s = consts[0].RatString()
+			}
+			consts = consts[1:]
+		case oABS:
+			s = "ABS"
+		case oADD:
+			s = "+"
+		case oMUL:
+			s = "*"
+		case oNEG:
+			s = "NEG"
+		case oQUO:
+			s = "/"
+		case oSUB:
+			s = "-"
+		case oAND:
+			s = "&"
+		case oANDNOT:
+			s = "&^"
+		case oBINOMIAL:
+			s = "BINOMIAL"
+		case oDIV:
+			s = "DIV"
+		case oEXP:
+			s = "EXP"
+		case oGCD:
+			s = "GCD"
+		case oLSH:
+			s = "<<"
+		case oMOD:
+			s = "MOD"
+		case oMODINVERSE:
+			s = "MODINV"
+		case oMULRANGE:
+			s = "MULRANGE"
+		case oNOT:
+			s = "NOT"
+		case oOR:
+			s = "|"
+		case oRAND:
+			s = "RAND"
+		case oREM:
+			s = "%"
+		case oRSH:
+			s = ">>"
+		case oXOR:
+			s = "^"
+		case oFRAC:
+			s = "FRAC"
+		case oDENOM:
+			s = "DENOM"
+		case oINV:
+			s = "INV"
+		case oNUM:
+			s = "NUM"
+		default:
+			panic("unknown op!")
+		}
+		if !first {
+			buf.WriteByte(' ')
+		}
+		buf.WriteString(s)
+		first = false
+	}
+	return buf.String()
+}
 
 func top(stack []interface{}) interface{} {
 	return stack[len(stack)-1]
@@ -529,7 +614,7 @@ func pop(stack *[]interface{}) interface{} {
 	return v
 }
 
-func toobig(x *big.Int) bool {
+func toobig64(x *big.Int) bool {
 	return x.Cmp(two63) >= 0
 }
 
