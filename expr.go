@@ -443,20 +443,30 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 		case oFRAC:
 			x := pop(&stack)
 			y := top(stack)
-			a, aok := x.(*big.Int)
-			b, bok := y.(*big.Int)
-			if !aok {
-				_ = x.(*big.Rat)
-				return nil, TypeError{"int"}
+			switch a := x.(type) {
+			case *big.Int:
+				switch b := y.(type) {
+				case *big.Int:
+					stack[len(stack)-1] = new(big.Rat).SetFrac(b, a)
+				case *big.Rat:
+					b.Quo(b, new(big.Rat).SetFrac(a, big.NewInt(1)))
+				default:
+					panic("frac: wrong type on stack! (int,?)")
+				}
+			case *big.Rat:
+				switch b := y.(type) {
+				case *big.Int:
+					r := new(big.Rat).SetFrac(b, big.NewInt(1))
+					r.Quo(r, a)
+					stack[len(stack)-1] = r
+				case *big.Rat:
+					b.Quo(b, a)
+				default:
+					panic("frac: wrong type on stack! (rat,?)")
+				}
+			default:
+				panic("frac: wrong type on stack! (?,?)")
 			}
-			if !bok {
-				_ = y.(*big.Rat)
-				return nil, TypeError{"int"}
-			}
-			if a.Sign() == 0 {
-				return nil, DivByZero{}
-			}
-			stack[len(stack)-1] = new(big.Rat).SetFrac(b, a)
 		case oDENOM:
 			x := top(stack)
 			switch a := x.(type) {
