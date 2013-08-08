@@ -398,8 +398,6 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 				return nil, TypeError{"int"}
 			}
 			b.Or(b, a)
-		case oRAND:
-			panic("not implemented yet")
 		case oREM:
 			x := pop(&stack)
 			y := top(stack)
@@ -445,33 +443,6 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 				return nil, TypeError{"int"}
 			}
 			b.Xor(b, a)
-		case oFRAC:
-			x := pop(&stack)
-			y := top(stack)
-			switch a := x.(type) {
-			case *big.Int:
-				switch b := y.(type) {
-				case *big.Int:
-					stack[len(stack)-1] = new(big.Rat).SetFrac(b, a)
-				case *big.Rat:
-					b.Quo(b, new(big.Rat).SetFrac(a, big.NewInt(1)))
-				default:
-					panic("frac: wrong type on stack! (int,?)")
-				}
-			case *big.Rat:
-				switch b := y.(type) {
-				case *big.Int:
-					r := new(big.Rat).SetFrac(b, big.NewInt(1))
-					r.Quo(r, a)
-					stack[len(stack)-1] = r
-				case *big.Rat:
-					b.Quo(b, a)
-				default:
-					panic("frac: wrong type on stack! (rat,?)")
-				}
-			default:
-				panic("frac: wrong type on stack! (?,?)")
-			}
 		case oDENOM:
 			x := top(stack)
 			switch a := x.(type) {
@@ -618,16 +589,12 @@ func (e *Expr) String() string {
 			s = "NOT"
 		case oOR:
 			s = "|"
-		case oRAND:
-			s = "RAND"
 		case oREM:
 			s = "%"
 		case oRSH:
 			s = ">>"
 		case oXOR:
 			s = "^"
-		case oFRAC:
-			s = "FRAC"
 		case oDENOM:
 			s = "DENOM"
 		case oINV:

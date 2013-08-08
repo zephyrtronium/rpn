@@ -53,13 +53,11 @@ const (
 	oMULRANGE
 	oNOT
 	oOR
-	oRAND
 	oREM
 	oRSH
 	oXOR
 
 	// rat ops
-	oFRAC // make a fraction
 	oDENOM
 	oINV
 	oNUM

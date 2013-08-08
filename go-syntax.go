@@ -149,11 +149,6 @@ func goast(node ast.Node, e *Expr) error {
 			case "mulrange":
 				op = oMULRANGE
 				n = 2
-			case "rand":
-				panic("not implemented yet")
-			case "frac":
-				op = oFRAC
-				n = 2
 			case "denom":
 				op = oDENOM
 				n = 1

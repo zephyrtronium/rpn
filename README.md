@@ -30,7 +30,6 @@ Supported operations in Go syntax:
  - exp(x, y[, m]) - exponentiation, optionally modulo m, of integers x, y, and m
  - modinv(x, p) - modular inverse of integer x in Z/pZ with p assumed prime
  - mulrange(x, y) - product of all integers in the range [x, y], with integers x and y
- - frac(x, y) - convert x and y to rational x/y
  - denom(x) - denominator of x
  - num(x) - numerator of x
  - trunc(x) - round x toward zero
