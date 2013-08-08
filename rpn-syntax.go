@@ -122,6 +122,9 @@ var ops = map[string]operator{
 	"DENOM":    oDENOM,
 	"INV":      oINV,
 	"NUM":      oNUM,
+	"TRUNC":    oTRUNC,
+	"FLOOR":    oFLOOR,
+	"CEIL":     oCEIL,
 }
 
 func (l *lexer) next() (tok, error) {

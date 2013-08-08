@@ -163,6 +163,15 @@ func goast(node ast.Node, e *Expr) error {
 			case "num":
 				op = oNUM
 				n = 1
+			case "trunc":
+				op = oTRUNC
+				n = 1
+			case "floor":
+				op = oFLOOR
+				n = 1
+			case "ceil":
+				op = oCEIL
+				n = 1
 			default:
 				return BadGoToken{}
 			}

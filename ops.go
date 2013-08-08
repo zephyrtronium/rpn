@@ -63,4 +63,9 @@ const (
 	oDENOM
 	oINV
 	oNUM
+
+	// rounding
+	oTRUNC
+	oFLOOR
+	oCEIL
 )

@@ -156,7 +156,12 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 			case *big.Int:
 				switch b := y.(type) {
 				case *big.Int:
-					b.Quo(b, a)
+					r := new(big.Rat).SetFrac(b, a)
+					if r.IsInt() {
+						b.Set(r.Num())
+					} else {
+						stack[len(stack)-1] = r
+					}
 				case *big.Rat:
 					b.Quo(b, new(big.Rat).SetFrac(a, big.NewInt(1)))
 					if b.IsInt() {
@@ -504,6 +509,33 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 			default:
 				panic("num: wrong type on stack!")
 			}
+		case oTRUNC:
+			switch a := top(stack).(type) {
+			case *big.Int: // do nothing
+			case *big.Rat:
+				stack[len(stack)-1] = a.Num().Quo(a.Num(), a.Denom())
+			default:
+				panic("trunc: unknown type on stack!")
+			}
+		case oFLOOR:
+			switch a := top(stack).(type) {
+			case *big.Int: // do nothing
+			case *big.Rat:
+				stack[len(stack)-1] = a.Num().Div(a.Num(), a.Denom())
+			default:
+				panic("floor: unknown type on stack!")
+			}
+		case oCEIL:
+			switch a := top(stack).(type) {
+			case *big.Int: // do nothing
+			case *big.Rat:
+				q, r := a.Num().QuoRem(a.Num(), a.Denom(), new(big.Int))
+				if r.Sign() > 0 {
+					stack[len(stack)-1] = q.Add(q, big.NewInt(1))
+				} else {
+					stack[len(stack)-1] = q
+				}
+			}
 		default:
 			panic("unknown op!")
 		}
@@ -602,6 +634,12 @@ func (e *Expr) String() string {
 			s = "INV"
 		case oNUM:
 			s = "NUM"
+		case oTRUNC:
+			s = "TRUNC"
+		case oFLOOR:
+			s = "FLOOR"
+		case oCEIL:
+			s = "CEIL"
 		default:
 			panic("unknown op!")
 		}

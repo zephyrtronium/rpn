@@ -33,5 +33,8 @@ Supported operations in Go syntax:
  - frac(x, y) - convert x and y to rational x/y
  - denom(x) - denominator of x
  - num(x) - numerator of x
+ - trunc(x) - round x toward zero
+ - floor(x) - round x toward -inf
+ - ceil(x) - round x toward +inf
 
 For a description of the RPN syntax, see <https://github.com/zephyrtronium/rpn/wiki/RPN-Syntax>.
