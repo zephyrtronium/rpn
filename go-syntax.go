@@ -164,7 +164,7 @@ func goast(node ast.Node, e *Expr) error {
 				op = oNUM
 				n = 1
 			default:
-				return BadToken{}
+				return BadGoToken{}
 			}
 			if n >= 0 {
 				if m < 0 {
@@ -180,10 +180,10 @@ func goast(node ast.Node, e *Expr) error {
 				}
 			}
 		} else {
-			return BadToken{}
+			return BadGoToken{}
 		}
 	default:
-		return BadToken{}
+		return BadGoToken{}
 	}
 	return nil
 }

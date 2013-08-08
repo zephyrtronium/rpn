@@ -50,7 +50,13 @@ type (
 	}
 
 	// An unknown token was parsed by the Go parser.
-	BadToken struct{}
+	BadGoToken struct{}
+
+	// A token could not be lexed by the RPN parser.
+	BadRPNToken struct {
+		Value string
+		Pos   int
+	}
 )
 
 func (m MissingVar) Error() string  { return "missing var " + m.Name }
@@ -58,4 +64,5 @@ func (t TypeError) Error() string   { return "incorrect type; needed " + t.Neede
 func (OverflowError) Error() string { return "overflow" }
 func (DivByZero) Error() string     { return "division by zero" }
 func (b BadCall) Error() string     { return fmt.Sprintf("bad call; needed %d args", b.Num) }
-func (BadToken) Error() string      { return "unrecognized token" }
+func (BadGoToken) Error() string    { return "unrecognized token" }
+func (b BadRPNToken) Error() string { return fmt.Sprintf("bad token %s at position %d", b.Value, b.Pos) }

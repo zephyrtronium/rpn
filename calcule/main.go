@@ -32,8 +32,14 @@ import (
 )
 
 func main() {
+	args := os.Args[1:]
+	useRPN := false
+	if args[0] == "-rpn" {
+		useRPN = true
+		args = args[1:]
+	}
 	vars := make(map[string]interface{})
-	for _, v := range os.Args[2:] {
+	for _, v := range args[1:] {
 		i := strings.Index(v, "=")
 		var ok bool
 		vars[v[:i]], ok = rpn.ParseConst(v[i+1:])
@@ -41,7 +47,11 @@ func main() {
 			panic(v[i+1:])
 		}
 	}
-	expr, err := rpn.CompileGo(os.Args[1])
+	f := rpn.CompileGo
+	if useRPN {
+		f = rpn.CompileRPN
+	}
+	expr, err := f(args[0])
 	if err != nil {
 		panic(err)
 	}

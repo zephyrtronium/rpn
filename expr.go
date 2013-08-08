@@ -508,7 +508,7 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 			panic("unknown op!")
 		}
 	}
-	switch x := stack[0].(type) {
+	switch x := top(stack).(type) {
 	case *big.Int:
 		return new(big.Rat).SetFrac(x, big.NewInt(1)), nil
 	case *big.Rat:
