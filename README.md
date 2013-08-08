@@ -1,8 +1,8 @@
 Evaluate yourself some numeric expressions.
 
-Currently, only limited Go syntax is supported, but a more calculator-y syntax is planned. The evaluator understands both arbitrary-precision integers and rationals of two of them, and will automatically promote the latter to the former when possible.
+Currently, both a limited Go syntax and a more assembly-like reverse Polish notation syntax are supported. Eventually, a more expressive infix syntax may be added.
 
-For an example usage, see calcule/main.go; this is a program which compiles a supported Go expression and evaluates it. Its usage is of the form `"expression" "var1=1" "var2=2" ...`.
+For an example usage, see calcule/main.go; this is a program which compiles a supported expression and evaluates it. Its usage is of the form `[-rpn] "expression" "var1=1" "var2=2" ...`.
 
 Supported operations in Go syntax:
 
@@ -30,6 +30,8 @@ Supported operations in Go syntax:
  - exp(x, y[, m]) - exponentiation, optionally modulo m, of integers x, y, and m
  - modinv(x, p) - modular inverse of integer x in Z/pZ with p assumed prime
  - mulrange(x, y) - product of all integers in the range [x, y], with integers x and y
- - frac(x, y) - convert integers x and y to rational x/y
- - denom(x) - denominator of rational x
- - num(x) - numerator of rational x
+ - frac(x, y) - convert x and y to rational x/y
+ - denom(x) - denominator of x
+ - num(x) - numerator of x
+
+For a description of the RPN syntax, see <https://github.com/zephyrtronium/rpn/wiki/RPN-Syntax>.
