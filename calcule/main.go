@@ -53,7 +53,10 @@ func main() {
 	}
 	expr, err := f(args[0])
 	if err != nil {
-		panic(err)
+		if _, ok := err.(rpn.LargeStack); !ok {
+			panic(err)
+		}
+		fmt.Println(err)
 	}
 	var res *big.Rat
 	res, err = expr.Eval(vars)

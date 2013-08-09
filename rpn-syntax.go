@@ -36,11 +36,18 @@ import (
 // correctly compile the output of an expression's String() method, and allows
 // alternate representations of some things. See
 // https://github.com/zephyrtronium/rpn/wiki/RPN-Syntax for more information.
-func CompileRPN(expr string) (*Expr, error) {
-	e := new(Expr)
+func CompileRPN(expr string) (e *Expr, err error) {
+	e = new(Expr)
 	l := lexer{expr, 0}
+	t := tok{}
+	stack := 0
+	defer func() {
+		if err == nil && stack > 1 {
+			err = LargeStack{}
+		}
+	}()
 	for {
-		t, err := l.next()
+		t, err = l.next()
 		switch t.kind {
 		case tBAD:
 			return nil, err
@@ -48,15 +55,37 @@ func CompileRPN(expr string) (*Expr, error) {
 			e.ops = append(e.ops, oCONST)
 			v, _ := new(big.Rat).SetString(t.val)
 			e.consts = append(e.consts, v)
+			stack++
 		case tOP:
-			e.ops = append(e.ops, ops[t.val])
+			op := ops[t.val]
+			switch op {
+			case oNOP: // do nothing
+			case oABS, oNEG, oNOT, oDENOM, oINV, oNUM, oTRUNC, oFLOOR, oCEIL:
+				if stack < 1 {
+					return nil, StackError{t.val, l.pos}
+				}
+			case oEXP:
+				stack -= 2
+				if stack < 1 {
+					return nil, StackError{t.val, l.pos}
+				}
+			default:
+				// binary operator
+				stack--
+				if stack < 1 {
+					return nil, StackError{t.val, l.pos}
+				}
+			}
+			e.ops = append(e.ops, op)
 		case tIDENT:
 			e.ops = append(e.ops, oLOAD)
 			e.names = append(e.names, t.val)
+			stack++
 		case tNIL:
 			e.ops = append(e.ops, oCONST)
 			e.consts = append(e.consts, nil)
-		case tEOE:
+			stack++
+		case tEND:
 			return e, nil
 		}
 	}
@@ -80,7 +109,7 @@ const (
 	tOP
 	tIDENT
 	tNIL
-	tEOE
+	tEND
 )
 
 var ops = map[string]operator{
@@ -127,7 +156,7 @@ var ops = map[string]operator{
 
 func (l *lexer) next() (tok, error) {
 	if len(l.src) == 0 {
-		return tok{tEOE, ""}, nil
+		return tok{tEND, ""}, nil
 	}
 	off := strings.IndexFunc(l.src, unicode.IsSpace)
 	if off < 0 {

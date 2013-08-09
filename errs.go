@@ -57,6 +57,15 @@ type (
 		Value string
 		Pos   int
 	}
+
+	// An RPN token does not have enough arguments on the stack.
+	StackError struct {
+		Token string
+		Pos   int
+	}
+
+	// An RPN expression contains extra values.
+	LargeStack struct{}
 )
 
 func (m MissingVar) Error() string  { return "missing var " + m.Name }
@@ -66,3 +75,7 @@ func (DivByZero) Error() string     { return "division by zero" }
 func (b BadCall) Error() string     { return fmt.Sprintf("bad call; needed %d args", b.Num) }
 func (BadGoToken) Error() string    { return "unrecognized token" }
 func (b BadRPNToken) Error() string { return fmt.Sprintf("bad token %s at position %d", b.Value, b.Pos) }
+func (s StackError) Error() string {
+	return fmt.Sprintf("insufficient arguments to %s before position %d", s.Token, s.Pos)
+}
+func (LargeStack) Error() string { return "expression ends with multiple values on stack" }
