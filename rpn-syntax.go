@@ -36,18 +36,12 @@ import (
 // correctly compile the output of an expression's String() method, and allows
 // alternate representations of some things. See
 // https://github.com/zephyrtronium/rpn/wiki/RPN-Syntax for more information.
-func CompileRPN(expr string) (e *Expr, err error) {
-	e = new(Expr)
-	l := lexer{expr, 0}
-	t := tok{}
+func CompileRPN(expr string) (*Expr, error) {
+	e := new(Expr)
+	l := lexer{strings.TrimSpace(expr), 0}
 	stack := 0
-	defer func() {
-		if err == nil && stack > 1 {
-			err = LargeStack{}
-		}
-	}()
 	for {
-		t, err = l.next()
+		t, err := l.next()
 		switch t.kind {
 		case tBAD:
 			return nil, err
@@ -86,6 +80,9 @@ func CompileRPN(expr string) (e *Expr, err error) {
 			e.consts = append(e.consts, nil)
 			stack++
 		case tEND:
+			if stack > 1 {
+				return e, LargeStack{}
+			}
 			return e, nil
 		}
 	}
