@@ -51,8 +51,7 @@ func CompileRPN(expr string) (*Expr, error) {
 			e.consts = append(e.consts, v)
 			stack++
 		case tOP:
-			op := ops[t.val]
-			switch op {
+			switch op := ops[t.val]; op {
 			case oNOP: // do nothing
 			case oABS, oNEG, oNOT, oDENOM, oINV, oNUM, oTRUNC, oFLOOR, oCEIL:
 				if stack < 1 {

@@ -220,6 +220,9 @@ var opFuncs = [...]opFunc{
 				return DivByZero{}
 			}
 			i.Inv(i)
+			if i.IsInt() {
+				e.SetTop(i.Num())
+			}
 		default:
 			panic("INV: wrong type on stack!")
 		}
