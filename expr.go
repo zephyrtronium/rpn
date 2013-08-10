@@ -57,6 +57,15 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 	}
 }
 
+func (e *Expr) AST() *AST {
+	v := &Evaluator{
+		Names:  e.names,
+		Consts: e.consts,
+	}
+	_, nn := ast(v, e.ops)
+	return nn
+}
+
 // Compute a list of names of variable names in the expression.
 func (e *Expr) Vars() []string {
 	m := make(map[string]struct{})
