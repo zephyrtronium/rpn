@@ -44,6 +44,9 @@ func getast(e *Evaluator, ops []operator) (int, *AST) {
 		return 1, nn
 	case oCONST:
 		nn := &AST{op, e.Consts[len(e.Consts)-e.C-1], nil, nil}
+		if r, ok := nn.Val.(*big.Rat); ok && r != nil && r.IsInt() {
+			nn.Val = r.Num()
+		}
 		e.C++
 		return 1, nn
 	case oABS, oNEG, oNOT, oDENOM, oINV, oNUM, oTRUNC, oFLOOR, oCEIL:
@@ -55,14 +58,14 @@ func getast(e *Evaluator, ops []operator) (int, *AST) {
 		n1, child1 := getast(e, ops[:len(ops)-1])
 		n2, child2 := getast(e, ops[:len(ops)-n1-1])
 		n3, child3 := getast(e, ops[:len(ops)-n2-n1-1])
-		nn := &AST{Op: op, Children: []*AST{child1, child2, child3}}
+		nn := &AST{Op: op, Children: []*AST{child3, child2, child1}}
 		child1.Parent, child2.Parent, child3.Parent = nn, nn, nn
 		return 1 + n1 + n2 + n3, nn
 	default:
 		// binary operator
 		n1, child1 := getast(e, ops[:len(ops)-1])
 		n2, child2 := getast(e, ops[:len(ops)-n1-1])
-		nn := &AST{Op: op, Children: []*AST{child1, child2}}
+		nn := &AST{Op: op, Children: []*AST{child2, child1}}
 		child1.Parent, child2.Parent = nn, nn
 		return 1 + n1 + n2, nn
 	}
@@ -75,7 +78,16 @@ func (nn *AST) RPN(e *Expr) {
 	case oLOAD:
 		e.names = append(e.names, nn.Val.(string))
 	case oCONST:
-		e.consts = append(e.consts, nn.Val.(*big.Rat))
+		switch v := nn.Val.(type) {
+		case *big.Int:
+			e.consts = append(e.consts, new(big.Rat).SetFrac(v, big.NewInt(1)))
+		case *big.Rat:
+			e.consts = append(e.consts, v)
+		case nil:
+			e.consts = append(e.consts, nil)
+		default:
+			panic("i'm too lazy to write a real error message that never should be seen")
+		}
 	default:
 		for _, child := range nn.Children {
 			child.RPN(e)

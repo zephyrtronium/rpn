@@ -57,6 +57,16 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 	}
 }
 
+// Simplify the expression.
+func (e *Expr) Slify() {
+	ast := e.AST()
+	// The act of creating the AST removes all NOPs and extra stack.
+	foldConsts(ast)
+	e.ops, e.names, e.consts = e.ops[:0], e.names[:0], e.consts[:0]
+	ast.RPN(e)
+}
+
+// Get the expression AST.
 func (e *Expr) AST() *AST {
 	v := &Evaluator{
 		Names:  e.names,

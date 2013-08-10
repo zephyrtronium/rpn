@@ -164,7 +164,7 @@ var opFuncs = [...]opFunc{
 			_ = y.(*big.Rat)
 			return TypeError{"int"}
 		}
-		if m != nil && !cok { // heh
+		if c != nil && !cok { // heh
 			_ = m.(*big.Rat)
 			return TypeError{"int"}
 		}
