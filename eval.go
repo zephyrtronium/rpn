@@ -25,6 +25,8 @@ package rpn
 
 import "math/big"
 
+// Evaluation context. This type is exported to allow eventual user-supplied
+// operations.
 type Evaluator struct {
 	Stack  []interface{}
 	Vars   map[string]interface{}
@@ -33,7 +35,7 @@ type Evaluator struct {
 	N, C   int
 }
 
-func (e *Evaluator) Eval(ops []operator) (err error) {
+func (e *Evaluator) eval(ops []operator) (err error) {
 	for _, op := range ops {
 		if err = opFuncs[op](e); err != nil {
 			return err
@@ -42,16 +44,19 @@ func (e *Evaluator) Eval(ops []operator) (err error) {
 	return nil
 }
 
+// Helper to get the top element on the stack.
 func (e *Evaluator) Top() interface{} {
 	return e.Stack[len(e.Stack)-1]
 }
 
+// Helper to get and remove the top element on the stack.
 func (e *Evaluator) Pop() interface{} {
 	v := e.Top()
 	e.Stack = e.Stack[:len(e.Stack)-1]
 	return v
 }
 
+// Helper to set the top element on the stack.
 func (e *Evaluator) SetTop(v interface{}) {
 	e.Stack[len(e.Stack)-1] = v
 }

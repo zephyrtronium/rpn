@@ -44,7 +44,7 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 		Names:  e.names,
 		Consts: e.consts,
 	}
-	if err = v.Eval(e.ops); err != nil {
+	if err = v.eval(e.ops); err != nil {
 		return nil, err
 	}
 	switch x := v.Top().(type) {
