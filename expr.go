@@ -62,7 +62,7 @@ func (e *Expr) AST() *AST {
 		Names:  e.names,
 		Consts: e.consts,
 	}
-	_, nn := ast(v, e.ops)
+	_, nn := getast(v, e.ops)
 	return nn
 }
 

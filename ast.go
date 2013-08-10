@@ -33,10 +33,10 @@ type AST struct {
 	Parent   *AST
 }
 
-func ast(e *Evaluator, ops []operator) (int, *AST) {
+func getast(e *Evaluator, ops []operator) (int, *AST) {
 	switch op := ops[len(ops)-1]; op {
 	case oNOP:
-		n, nn := ast(e, ops[:len(ops)-1])
+		n, nn := getast(e, ops[:len(ops)-1])
 		return 1 + n, nn
 	case oLOAD:
 		nn := &AST{op, e.Names[len(e.Names)-e.N-1], nil, nil}
@@ -47,21 +47,21 @@ func ast(e *Evaluator, ops []operator) (int, *AST) {
 		e.C++
 		return 1, nn
 	case oABS, oNEG, oNOT, oDENOM, oINV, oNUM, oTRUNC, oFLOOR, oCEIL:
-		n, child := ast(e, ops[:len(ops)-1])
+		n, child := getast(e, ops[:len(ops)-1])
 		nn := &AST{Op: op, Children: []*AST{child}}
 		child.Parent = nn
 		return 1 + n, nn
 	case oEXP:
-		n1, child1 := ast(e, ops[:len(ops)-1])
-		n2, child2 := ast(e, ops[:len(ops)-n1-1])
-		n3, child3 := ast(e, ops[:len(ops)-n2-n1-1])
+		n1, child1 := getast(e, ops[:len(ops)-1])
+		n2, child2 := getast(e, ops[:len(ops)-n1-1])
+		n3, child3 := getast(e, ops[:len(ops)-n2-n1-1])
 		nn := &AST{Op: op, Children: []*AST{child1, child2, child3}}
 		child1.Parent, child2.Parent, child3.Parent = nn, nn, nn
 		return 1 + n1 + n2 + n3, nn
 	default:
 		// binary operator
-		n1, child1 := ast(e, ops[:len(ops)-1])
-		n2, child2 := ast(e, ops[:len(ops)-n1-1])
+		n1, child1 := getast(e, ops[:len(ops)-1])
+		n2, child2 := getast(e, ops[:len(ops)-n1-1])
 		nn := &AST{Op: op, Children: []*AST{child1, child2}}
 		child1.Parent, child2.Parent = nn, nn
 		return 1 + n1 + n2, nn
@@ -70,16 +70,16 @@ func ast(e *Evaluator, ops []operator) (int, *AST) {
 
 // Compile an AST back into an evaluable expression.
 func (nn *AST) RPN(e *Expr) {
-	switch nn.op {
+	switch nn.Op {
 	case oNOP: // do nothing
 	case oLOAD:
-		e.names = append(e.names, nn.val.(string))
+		e.names = append(e.names, nn.Val.(string))
 	case oCONST:
-		e.consts = append(e.consts, nn.val.(*big.Rat))
+		e.consts = append(e.consts, nn.Val.(*big.Rat))
 	default:
-		for _, child := range nn.children {
-			nn.RPN(e)
+		for _, child := range nn.Children {
+			child.RPN(e)
 		}
 	}
-	e.ops = append(e.ops, nn.op)
+	e.ops = append(e.ops, nn.Op)
 }
