@@ -168,7 +168,14 @@ var opFuncs = [...]opFunc{
 			_ = m.(*big.Rat)
 			return TypeError{"int"}
 		}
-		b.Exp(b, a, c)
+		invert := a.Sign() < 0
+		if invert {
+			c = nil
+		}
+		b.Exp(b, a.Abs(a), c)
+		if invert {
+			e.SetTop(new(big.Rat).SetFrac(big.NewInt(1), b))
+		}
 		return nil
 	},
 	oGCD:        integerBinary("GCD", func(r, x, y *big.Int) *big.Int { return r.GCD(nil, nil, x, y) }),
@@ -207,7 +214,7 @@ var opFuncs = [...]opFunc{
 			if i.Sign() == 0 {
 				return DivByZero{}
 			}
-			i.Quo(big.NewInt(1), i)
+			e.SetTop(new(big.Rat).SetFrac(big.NewInt(1), i))
 		case *big.Rat:
 			if i.Sign() == 0 {
 				return DivByZero{}
