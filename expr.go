@@ -62,6 +62,7 @@ func (e *Expr) Slify() {
 	ast := e.AST()
 	// The act of creating the AST removes all NOPs and extra stack.
 	foldConsts(ast)
+	quoToInv(ast)
 	e.ops, e.names, e.consts = e.ops[:0], e.names[:0], e.consts[:0]
 	ast.RPN(e)
 }

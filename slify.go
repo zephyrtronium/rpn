@@ -23,6 +23,8 @@ freely, subject to the following restrictions:
 
 package rpn
 
+import "math/big"
+
 func foldConsts(nn *AST) {
 	for _, child := range nn.Children {
 		foldConsts(child)
@@ -68,6 +70,33 @@ func foldConsts(nn *AST) {
 				ch1.Parent, ch2.Parent = nil, nil
 				nn.Children[0], nn.Children[1] = nil, nil
 				nn.Children, nn.Op, nn.Val = nil, oCONST, v.Top()
+			}
+		}
+	}
+}
+
+func quoToInv(nn *AST) {
+	for _, child := range nn.Children {
+		quoToInv(child)
+	}
+	if nn.Op == oQUO {
+		num := nn.Children[0]
+		if num.Op == oCONST {
+			ok := false
+			switch a := num.Val.(type) {
+			case *big.Int:
+				if a.Cmp(big.NewInt(1)) == 0 {
+					ok = true
+				}
+			case *big.Rat:
+				if a.Cmp(big.NewRat(1, 1)) == 0 {
+					ok = true
+				}
+			}
+			if ok {
+				nn.Op = oINV
+				nn.Children = nn.Children[1:]
+				num.Parent = nil
 			}
 		}
 	}
