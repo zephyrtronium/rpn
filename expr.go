@@ -61,20 +61,25 @@ func (e *Expr) Eval(vars map[string]interface{}) (result *big.Rat, err error) {
 func (e *Expr) Slify() {
 	ast := e.AST()
 	// The act of creating the AST removes all NOPs and extra stack.
-	foldConsts(ast)
-	quoToInv(ast)
+	foldConsts(ast.Children[0])
+	for redundant(ast) {
+		// The condition is doing the work.
+	}
 	e.ops, e.names, e.consts = e.ops[:0], e.names[:0], e.consts[:0]
 	ast.RPN(e)
 }
 
-// Get the expression AST.
+// Get the expression AST. The root is a NOP node; actual operations should be
+// done on its child and recursively thence.
 func (e *Expr) AST() *AST {
 	v := &Evaluator{
 		Names:  e.names,
 		Consts: e.consts,
 	}
 	_, nn := getast(v, e.ops)
-	return nn
+	root := &AST{oNOP, nil, []*AST{nn}, nil}
+	nn.Parent = root
+	return root
 }
 
 // Compute a list of names of variable names in the expression.

@@ -60,11 +60,11 @@ func main() {
 	}
 	fmt.Println(expr)
 	expr.Slify()
+	fmt.Println(expr)
 	var res *big.Rat
 	res, err = expr.Eval(vars)
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(expr)
 	fmt.Println(res.RatString())
 }

@@ -74,7 +74,12 @@ func getast(e *Evaluator, ops []operator) (int, *AST) {
 // Compile an AST back into an evaluable expression.
 func (nn *AST) RPN(e *Expr) {
 	switch nn.Op {
-	case oNOP: // do nothing
+	case oNOP:
+		// Skip NOPs.
+		for _, child := range nn.Children {
+			child.RPN(e)
+		}
+		return
 	case oLOAD:
 		e.names = append(e.names, nn.Val.(string))
 	case oCONST:

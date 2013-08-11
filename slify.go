@@ -75,29 +75,149 @@ func foldConsts(nn *AST) {
 	}
 }
 
-func quoToInv(nn *AST) {
+func redundant(nn *AST) (changed bool) {
 	for _, child := range nn.Children {
-		quoToInv(child)
-	}
-	if nn.Op == oQUO {
-		num := nn.Children[0]
-		if num.Op == oCONST {
-			ok := false
-			switch a := num.Val.(type) {
-			case *big.Int:
-				if a.Cmp(big.NewInt(1)) == 0 {
-					ok = true
-				}
-			case *big.Rat:
-				if a.Cmp(big.NewRat(1, 1)) == 0 {
-					ok = true
-				}
-			}
-			if ok {
-				nn.Op = oINV
-				nn.Children = nn.Children[1:]
-				num.Parent = nil
-			}
+		if redundant(child) {
+			changed = true
 		}
 	}
+	switch nn.Op {
+	case oNOP: // do nothing
+	case oNEG:
+		// NEG NEG is redundant
+		if x := nn.Children[0]; x.Op == oNEG {
+			linkpast(nn, x.Children[0])
+			return true
+		} else if x.Op == oSUB {
+			// -(x-y) == y-x
+			x.Children[0], x.Children[1] = x.Children[1], x.Children[0]
+			linkpast(nn, x)
+			return true
+		}
+	case oINV:
+		// INV INV is redundant
+		if x := nn.Children[0]; x.Op == oINV {
+			linkpast(nn, x.Children[0])
+			return true
+		} else if x.Op == oQUO {
+			// 1/(x/y) == y/x
+			x.Children[0], x.Children[1] = x.Children[1], x.Children[0]
+			linkpast(nn, x)
+			return true
+		}
+	case oMUL:
+		x, y := nn.Children[0], nn.Children[1]
+		switch {
+		case x.Op == oNEG && y.Op == oNEG:
+			// -x*-y == x*y
+			linkpast(x, x.Children[0])
+			linkpast(y, y.Children[0])
+			return true
+		case x.Op == oINV:
+			if y.Op == oINV {
+				// 1/x * 1/y == 1/(x*y)
+				linkpast(x, x.Children[0])
+				linkpast(y, y.Children[0])
+				ins := &AST{oINV, nil, []*AST{nn}, nn.Parent}
+				if nn.Parent != nil {
+					nn.Parent.Children[findme(nn)] = ins
+				}
+				nn.Parent = ins
+				return true
+			} else {
+				// 1/x * y == y/x
+				linkpast(x, x.Children[0])
+				nn.Children[0], nn.Children[1] = nn.Children[1], nn.Children[0]
+				nn.Op = oQUO
+				return true
+			}
+		case y.Op == oINV:
+			// x * 1/y == x/y
+			linkpast(y, y.Children[0])
+			nn.Op = oQUO
+			return true
+		case x.Op == oCONST && eqone(x.Val):
+			// 1 * y == y
+			linkpast(nn, y)
+			return true
+		case y.Op == oCONST && eqone(y.Val):
+			// x * 1 == x
+			linkpast(nn, x)
+			return true
+		}
+	case oQUO:
+		x, y := nn.Children[0], nn.Children[1]
+		switch {
+		case x.Op == oNEG && y.Op == oNEG:
+			// -x*-y == x*y
+			linkpast(x, x.Children[0])
+			linkpast(y, y.Children[0])
+			return true
+		case x.Op == oINV:
+			if y.Op == oINV {
+				// 1/x / 1/y == y/x
+				linkpast(x, x.Children[0])
+				linkpast(y, y.Children[0])
+				nn.Children[0], nn.Children[1] = nn.Children[1], nn.Children[0]
+				return true
+			}
+			// 1/x / y == 1/(x*y), but that's the same number of operations.
+		case y.Op == oINV:
+			// x / 1/y == x*y
+			linkpast(y, y.Children[0])
+			nn.Op = oMUL
+			return true
+		case x.Op == oCONST && eqone(x.Val):
+			// 1 / y == 1/y (nowai)
+			nn.Children[0], x.Parent = nil, nil
+			nn.Op = oINV
+			nn.Children = nn.Children[1:]
+			return true
+		case y.Op == oCONST && eqone(y.Val):
+			// x / 1 == x
+			linkpast(nn, x)
+			return true
+		}
+	}
+	return changed
 }
+
+func linkpast(nn, ch *AST) {
+	ch.Parent = nn.Parent
+	if nn.Parent != nil {
+		nn.Parent.Children[findme(nn)] = ch
+		nn.Parent = nil
+	}
+	for i := range nn.Children {
+		nn.Children[i] = nil
+	}
+}
+
+func findme(me *AST) int {
+	if me.Parent == nil {
+		return -1
+	}
+	for i, sibling := range me.Parent.Children {
+		if sibling == me { // I'm turning into my brother! D:
+			return i
+		}
+	}
+	return -1
+}
+
+func eqone(val interface{}) bool {
+	switch a := val.(type) {
+	case *big.Int:
+		if a.Cmp(intOne) == 0 {
+			return true
+		}
+	case *big.Rat:
+		if a.Cmp(ratOne) == 0 {
+			return true
+		}
+	}
+	return false
+}
+
+var intOne = big.NewInt(1)
+var ratOne = big.NewRat(1, 1)
